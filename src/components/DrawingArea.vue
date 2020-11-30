@@ -61,16 +61,6 @@ class Position {
   y;
 }
 
-// class Size {
-//   constructor(w, h) {
-//     this.w = w;
-//     this.h = h;
-//   }
-//
-//   w;
-//   h;
-// }
-
 class Stroke {
   constructor(drawingState) {
     this.drawingState = drawingState;
@@ -111,7 +101,6 @@ export default {
 
       drawingState: {
         action: DRAWING_STATES.None,
-        // oldPosition: new Position(0, 0),
         activeStroke: null,
         existingStrokes: [],
       },
@@ -131,42 +120,9 @@ export default {
     getMouseCanvasPosition: function(event) {
       return new Position (event.clientX - this.tempCanvas.offsetLeft, event.clientY - this.tempCanvas.offsetTop);
     },
-    onResize2: function() {
-      console.log("onResize");
-      let maxWidth = this.$vnode.elm.offsetWidth;
-      let maxHeight = this.$vnode.elm.offsetHeight;
-
-      // console.log(this);
-      // console.clear();
-
-      let canvasMaxWidth = maxHeight * this.ASPECT_RATIO;
-      let canvasMaxHeight = maxWidth / this.ASPECT_RATIO;
-
-      if (canvasMaxHeight > maxHeight) {
-        canvasMaxHeight = maxHeight;
-      }
-      if (canvasMaxWidth > maxWidth) {
-        canvasMaxWidth = maxWidth;
-      }
-
-      // console.log("Area size: " + maxWidth + " x " + maxHeight + "  ==> Canvas size: " + canvasMaxWidth + ", " + canvasMaxHeight);
-
-      this.canvasWidth = canvasMaxWidth;
-      this.canvasHeight = canvasMaxHeight;
-
-      console.log("onResize finished");
-      window.requestAnimationFrame(this.redraw);
-    },
     onResize: function () {
-      // window.requestAnimationFrame(this.onResize2);
-      // return;
-
-      console.log("onResize");
       let maxWidth = this.$vnode.elm.offsetWidth;
       let maxHeight = this.$vnode.elm.offsetHeight;
-
-      // console.log(this);
-      // console.clear();
 
       let canvasMaxWidth = maxHeight * this.ASPECT_RATIO;
       let canvasMaxHeight = maxWidth / this.ASPECT_RATIO;
@@ -180,8 +136,6 @@ export default {
 
       this.canvasWidth = canvasMaxWidth;
       this.canvasHeight = canvasMaxHeight;
-
-      console.log("onResize finished");
 
       window.requestAnimationFrame(this.redraw);
     },
@@ -210,7 +164,6 @@ export default {
       let newMouseButtonState = this.resolveMouseButtons(event);
       this.uiState.leftMouseDown = newMouseButtonState.isPrimaryButtonPressed;
       let newDrawingStateAction = this.resolveDrawingStateAction();
-      // console.log(event);
 
       if ((this.drawingState.action == DRAWING_STATES.None) && (newDrawingStateAction == DRAWING_STATES.Freehand)) {
         this.drawingState.action = newDrawingStateAction;
@@ -228,10 +181,6 @@ export default {
         this.drawingState.existingStrokes.push(stroke);
         stroke.positions.push(currentPosition);
       }
-      // else {
-      //   let ctx = this.canvas.getContext("2d");
-      //   ctx.moveTo(this.drawingState.oldPosition.x, this.drawingState.oldPosition.y);
-      // }
     },
     canvasMouseUp(event) {
       let mouseButtons = this.resolveMouseButtons(event);
@@ -278,15 +227,7 @@ export default {
       }
       else if ((this.drawingState.action == DRAWING_STATES.Line)) {
         let newRelativePosition = this.convertPositionFromCanvasToRelative(this.getMouseCanvasPosition(event));
-        // let newCanvasPosition = this.convertPositionFromRelativeToCanvas(newRelativePosition);
-        // let ctx = this.canvas.getContext("2d");
-        // ctx.beginPath();
-        // let lastCanvasPosition = this.convertPositionFromRelativeToCanvas(this.drawingState.activeStroke.positions.lastItem);
-        // ctx.moveTo(lastCanvasPosition.x, lastCanvasPosition.y);
         this.drawingState.activeStroke.positions.push(newRelativePosition);
-        // ctx.lineTo(newCanvasPosition.x, newCanvasPosition.y);
-        // ctx.stroke();
-        // ctx.closePath();
         window.requestAnimationFrame(this.redraw);
       }
     },
@@ -298,25 +239,9 @@ export default {
       }
 
       let isDown = event.type == "keydown";
-      // let key = event.key;
-      // let keyCode = event.keyCode;
       let isShiftKey = event.key == KeyCode.VALUE_SHIFT;
 
       let keyLower = event.key.toLowerCase();
-
-      // if (!Array.isArray(keysDown)) {
-      //   keyDown = keysDown;
-      // }
-      // else if (keysDown.length == 1) {
-      //   keyDown = keysDown[0];
-      // }
-
-      // if (!Array.isArray(keysUp)) {
-      //   keyUp = keysUp;
-      // }
-      // else if (keysUp.length == 1) {
-      //   keyUp = keysUp[0];
-      // }
 
       if (isShiftKey) {
         this.uiState.shiftPressed = isDown;
@@ -352,7 +277,6 @@ export default {
       let ctx = this.canvas.getContext("2d");
       ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
       ctx.beginPath();
-      // let strokeNum = 1;
       this.drawingState.existingStrokes.forEach((stroke) => {
         let firstCanvasPosition = this.convertPositionFromRelativeToCanvas(stroke.positions[0]);
         let lastCanvasPosition = this.convertPositionFromRelativeToCanvas(stroke.positions.lastItem);
@@ -384,10 +308,7 @@ export default {
       let tempCtx = this.tempCanvas.getContext("2d");
       tempCtx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
       tempCtx.beginPath();
-      // let strokeNum = 1;
       this.drawingState.existingStrokes.forEach((stroke) => {
-        // console.log("Stroke #" + strokeNum + ": Action: " + stroke.drawingState + " Positions: " + stroke.positions.length);
-        // strokeNum++;
         let firstCanvasPosition = this.convertPositionFromRelativeToCanvas(stroke.positions[0]);
         let lastCanvasPosition = this.convertPositionFromRelativeToCanvas(stroke.positions.lastItem);
         if (stroke.drawingState == DRAWING_STATES.Freehand) {
@@ -403,11 +324,6 @@ export default {
           }
         }
       })
-      // ctx.beginPath();
-      // ctx.moveTo(0, 0);
-      // ctx.lineTo(20, 20);
-      // ctx.stroke();
-      // ctx.closePath();
       console.log("RedrawTemp finished");
     },
     convertPositionFromCanvasToRelative(canvasPosition) {
@@ -426,17 +342,6 @@ export default {
       return new MouseButtons(event.buttons & 1, event.buttons & 4, event.buttons & 2, event.buttons & 8, event.buttons & 16);
     }
   },
-  // computed: {
-  //   keymap() {
-  //     return {
-  //       "shift": {
-  //         keydown: () => {this.keyAction([KeyCode.KEY_SHIFT], null)},
-  //         keyup: () => {this.keyAction([], [KeyCode.KEY_SHIFT])},
-  //       },
-  //       "a": this.keyAction,
-  //     };
-  //   },
-  // },
   computed: {
     drawingStates: () => DRAWING_STATES,
     drawingTools: () => DRAWING_TOOLS,
@@ -455,8 +360,6 @@ export default {
 
 <style scoped>
   .drawingAreaWrapper {
-    /*border: solid 1px red;*/
-    /*overflow: visible;*/
     display: flex;
     background-color: cyan;
     justify-content: left;
@@ -470,9 +373,7 @@ export default {
   }
 
   canvas {
-    /*border: solid 1px black;*/
     object-fit: contain;
-    /*background-color: red;*/
     /*border: solid 2px #dadcda;*/
     display: block;
     position: absolute;
