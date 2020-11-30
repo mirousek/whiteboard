@@ -1,43 +1,54 @@
 <template>
 <!--  <div class="drawingAreaWrapper" v-on:resize="$emit('onResize', innerWidth, innerHeight)">-->
   <div class="drawingAreaWrapper">
-    <canvas
-        id="mainCanvas"
-        ref="mainCanvas"
-        :style="{ width: canvasWidth + 'px', height: canvasHeight + 'px'}"
-        :width="canvasWidth"
-        :height="canvasHeight"
-    />
-    <canvas
-        id="tempCanvas"
-        ref="tempCanvas"
-        :style="{ width: canvasWidth + 'px', height: canvasHeight + 'px'}"
-        :width="canvasWidth"
-        :height="canvasHeight"
-        v-on:mousedown="canvasMouseDown"
-        v-on:mousemove="canvasMouseMove"
-        v-on:mouseup="canvasMouseUp"
-        v-on:mouseout="canvasMouseOut"
-    />
+    <div id="toolsArea">
+      <ul class="drawingToolsList">
+        <li v-for="tool in drawingTools" v-bind:key="tool.value" :class="(drawingToolsState.activeTool == tool) && 'selected'" class="drawingTool">
+          {{tool.name}}
+        </li>
+      </ul>
+      <ul class="drawingStatesList">
+        <li v-for="state in drawingStates" v-bind:key="state.value" :class="(drawingState.action == state) && 'selected'">
+          {{state.name}}
+        </li>
+      </ul>
+    </div>
+    <div id="canvasArea">
+      <canvas
+          id="mainCanvas"
+          ref="mainCanvas"
+          :style="{ width: canvasWidth + 'px', height: canvasHeight + 'px'}"
+          :width="canvasWidth"
+          :height="canvasHeight"
+      />
+      <canvas
+          id="tempCanvas"
+          ref="tempCanvas"
+          :style="{ width: canvasWidth + 'px', height: canvasHeight + 'px'}"
+          :width="canvasWidth"
+          :height="canvasHeight"
+          v-on:mousedown="canvasMouseDown"
+          v-on:mousemove="canvasMouseMove"
+          v-on:mouseup="canvasMouseUp"
+          v-on:mouseout="canvasMouseOut"
+      />
+    </div>
   </div>
-<!--    <canvas id="mainCanvas" /></div>-->
 </template>
 
 <script>
-// import "../../node_modules/core-js";
-// eslint-disable-next-line no-unused-vars
-// var r = require("core-js");
 import "core-js/features/array";
 import * as KeyCode from "keycode-js"
+import "@/scripts/helpers"
 
-const DRAWING_STATES = Object.freeze({
-  None: 1,
-  Freehand: 2,
-  Line: 3,
+const DRAWING_STATES = Object.deepFreeze({
+  None: {value: 1, name: "None"},
+  Freehand: {value: 2, name: "Freehand"},
+  Line: {value: 3, name: "Line"},
 });
 
-const DRAWING_TOOLS = Object.freeze({
-  Freehand: 1
+export const DRAWING_TOOLS = Object.deepFreeze({
+  Freehand: {value: 1, name: "Freehand"},
 });
 
 class Position {
@@ -426,6 +437,10 @@ export default {
   //     };
   //   },
   // },
+  computed: {
+    drawingStates: () => DRAWING_STATES,
+    drawingTools: () => DRAWING_TOOLS,
+  },
   mounted() {
     this.canvas = this.$refs.mainCanvas;
     this.tempCanvas = this.$refs.tempCanvas;
@@ -444,8 +459,14 @@ export default {
     /*overflow: visible;*/
     display: flex;
     background-color: cyan;
-    justify-content: center;
+    justify-content: left;
     overflow: hidden;
+  }
+
+  #canvasArea {
+    display: flex;
+    justify-content: center;
+    flex-grow: 1;
   }
 
   canvas {
@@ -459,5 +480,20 @@ export default {
 
   canvas#mainCanvas {
     background-color: red;
+  }
+
+  #toolsArea .drawingToolsList li,
+  #toolsArea .drawingStatesList li {
+    list-style-type: none;
+    text-align: left;
+  }
+
+  #toolsArea .drawingToolsList,
+  #toolsArea .drawingStatesList {
+    padding-inline-start: 0px;
+  }
+
+  #toolsArea li.selected {
+    font-weight: bold;
   }
 </style>
