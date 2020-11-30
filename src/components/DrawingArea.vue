@@ -30,7 +30,6 @@
           v-on:mousedown="canvasMouseDown"
           v-on:mousemove="canvasMouseMove"
           v-on:mouseup="canvasMouseUp"
-          v-on:mouseout="canvasMouseOut"
       />
     </div>
   </div>
@@ -195,21 +194,6 @@ export default {
           }
         }
       }
-    },
-    canvasMouseOut() {
-      this.uiState.leftMouseDown = false;
-      let newDrawingStateAction = this.resolveDrawingStateAction();
-      if ((this.drawingState.action == DRAWING_STATES.Freehand) && (newDrawingStateAction == DRAWING_STATES.None)) {
-        this.drawingState.action = newDrawingStateAction;
-        this.drawingState.existingStrokes.push(this.drawingState.activeStroke);
-        this.drawingState.activeStroke = null;
-      }
-      else if ((this.drawingState.action == DRAWING_STATES.Line) && (newDrawingStateAction == DRAWING_STATES.None)) {
-        this.drawingState.action = newDrawingStateAction;
-        this.drawingState.existingStrokes.push(this.drawingState.activeStroke);
-        this.drawingState.activeStroke = null;
-      }
-      window.requestAnimationFrame(this.redraw);
     },
     canvasMouseMove: function(event) {
       let newMouseButtonState = this.resolveMouseButtons(event);
