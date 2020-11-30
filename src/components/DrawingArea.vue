@@ -165,43 +165,49 @@ export default {
       this.uiState.leftMouseDown = newMouseButtonState.isPrimaryButtonPressed;
       let newDrawingStateAction = this.resolveDrawingStateAction();
 
-      if ((this.drawingState.action == DRAWING_STATES.None) && (newDrawingStateAction == DRAWING_STATES.Freehand)) {
-        this.drawingState.action = newDrawingStateAction;
-        let stroke = new Stroke(newDrawingStateAction);
-        let currentPosition = this.convertPositionFromCanvasToRelative(this.getMouseCanvasPosition(event));
-        this.drawingState.activeStroke = stroke;
-        this.drawingState.existingStrokes.push(stroke);
-        stroke.positions.push(currentPosition);
-      }
-      else if ((this.drawingState.action == DRAWING_STATES.None) && (newDrawingStateAction == DRAWING_STATES.Line)) {
-        this.drawingState.action = newDrawingStateAction;
-        let stroke = new Stroke(newDrawingStateAction);
-        let currentPosition = this.convertPositionFromCanvasToRelative(this.getMouseCanvasPosition(event));
-        this.drawingState.activeStroke = stroke;
-        this.drawingState.existingStrokes.push(stroke);
-        stroke.positions.push(currentPosition);
+      if (this.drawingState.action == DRAWING_STATES.None) {
+        switch (newDrawingStateAction) {
+          case DRAWING_STATES.Freehand:
+          case DRAWING_STATES.Line: {
+            this.drawingState.action = newDrawingStateAction;
+            let stroke = new Stroke(newDrawingStateAction);
+            let currentPosition = this.convertPositionFromCanvasToRelative(this.getMouseCanvasPosition(event));
+            this.drawingState.activeStroke = stroke;
+            stroke.positions.push(currentPosition);
+            break;
+          }
+        }
       }
     },
     canvasMouseUp(event) {
       let mouseButtons = this.resolveMouseButtons(event);
       this.uiState.leftMouseDown = mouseButtons.isPrimaryButtonPressed;
       let newDrawingStateAction = this.resolveDrawingStateAction();
-      if ((this.drawingState.action == DRAWING_STATES.Freehand) && (newDrawingStateAction == DRAWING_STATES.None)) {
-        this.drawingState.action = newDrawingStateAction;
+      if (newDrawingStateAction == DRAWING_STATES.None) {
+        switch (this.drawingState.action) {
+          case DRAWING_STATES.Freehand:
+          case DRAWING_STATES.Line: {
+            this.drawingState.action = newDrawingStateAction;
+            this.drawingState.existingStrokes.push(this.drawingState.activeStroke);
+            this.drawingState.activeStroke = null;
+            window.requestAnimationFrame(this.redraw);
+            break;
+          }
+        }
       }
-      else if ((this.drawingState.action == DRAWING_STATES.Line) && (newDrawingStateAction == DRAWING_STATES.None)) {
-        this.drawingState.action = newDrawingStateAction;
-      }
-      window.requestAnimationFrame(this.redraw);
     },
     canvasMouseOut() {
       this.uiState.leftMouseDown = false;
       let newDrawingStateAction = this.resolveDrawingStateAction();
       if ((this.drawingState.action == DRAWING_STATES.Freehand) && (newDrawingStateAction == DRAWING_STATES.None)) {
         this.drawingState.action = newDrawingStateAction;
+        this.drawingState.existingStrokes.push(this.drawingState.activeStroke);
+        this.drawingState.activeStroke = null;
       }
       else if ((this.drawingState.action == DRAWING_STATES.Line) && (newDrawingStateAction == DRAWING_STATES.None)) {
         this.drawingState.action = newDrawingStateAction;
+        this.drawingState.existingStrokes.push(this.drawingState.activeStroke);
+        this.drawingState.activeStroke = null;
       }
       window.requestAnimationFrame(this.redraw);
     },
@@ -211,24 +217,14 @@ export default {
         this.canvasMouseUp(event);
       }
 
-      console.log(event);
-      // let newDrawingStateAction = this.resolveDrawingStateAction();
-      if ((this.drawingState.action == DRAWING_STATES.Freehand)) {
-        let newRelativePosition = this.convertPositionFromCanvasToRelative(this.getMouseCanvasPosition(event));
-        let newCanvasPosition = this.convertPositionFromRelativeToCanvas(newRelativePosition);
-        let ctx = this.canvas.getContext("2d");
-        ctx.beginPath();
-        let lastCanvasPosition = this.convertPositionFromRelativeToCanvas(this.drawingState.activeStroke.positions.lastItem);
-        ctx.moveTo(lastCanvasPosition.x, lastCanvasPosition.y);
-        this.drawingState.activeStroke.positions.push(newRelativePosition);
-        ctx.lineTo(newCanvasPosition.x, newCanvasPosition.y);
-        ctx.stroke();
-        ctx.closePath();
-      }
-      else if ((this.drawingState.action == DRAWING_STATES.Line)) {
-        let newRelativePosition = this.convertPositionFromCanvasToRelative(this.getMouseCanvasPosition(event));
-        this.drawingState.activeStroke.positions.push(newRelativePosition);
-        window.requestAnimationFrame(this.redraw);
+      switch (this.drawingState.action) {
+        case DRAWING_STATES.Freehand:
+        case DRAWING_STATES.Line: {
+          let newRelativePosition = this.convertPositionFromCanvasToRelative(this.getMouseCanvasPosition(event));
+          this.drawingState.activeStroke.positions.push(newRelativePosition);
+          window.requestAnimationFrame(this.redrawTemp);
+          break;
+        }
       }
     },
     keyAction: function(event) {
@@ -248,17 +244,17 @@ export default {
       }
 
       let newDrawingStateAction = this.resolveDrawingStateAction();
-      if ((this.drawingState.action == DRAWING_STATES.Freehand) && (newDrawingStateAction == DRAWING_STATES.Line)) {
-        this.drawingState.action = newDrawingStateAction;
-        this.setActiveStrokeDrawingState(newDrawingStateAction);
-        window.requestAnimationFrame(this.redraw);
+
+      switch (newDrawingStateAction) {
+        case DRAWING_STATES.Freehand:
+        case DRAWING_STATES.Line:
+          this.drawingState.action = newDrawingStateAction;
+          this.setActiveStrokeDrawingState(newDrawingStateAction);
+          window.requestAnimationFrame(this.redraw);
+          break;
       }
-      else if ((this.drawingState.action == DRAWING_STATES.Line) && (newDrawingStateAction == DRAWING_STATES.Freehand)) {
-        this.drawingState.action = newDrawingStateAction;
-        this.setActiveStrokeDrawingState(newDrawingStateAction);
-        window.requestAnimationFrame(this.redraw);
-      }
-      else if (isDown && (keyLower == KeyCode.VALUE_Z) && (event.ctrlKey)) {
+
+      if (isDown && (keyLower == KeyCode.VALUE_Z) && (event.ctrlKey)) {
         if (this.drawingState.action == DRAWING_STATES.None) {
           this.drawingState.existingStrokes.pop();
           window.requestAnimationFrame(this.redraw);
@@ -272,58 +268,44 @@ export default {
       this.redrawMain();
       this.redrawTemp();
     },
-    redrawMain: function() {
-      // console.log("RedrawMain");
-      let ctx = this.canvas.getContext("2d");
+    redrawCanvas: function(canvas, strokes) {
+      let ctx = canvas.getContext("2d");
       ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
+
+      if (strokes == null) {
+        return;
+      }
+
+      if (!Array.isArray(strokes)) {
+        strokes = [strokes];
+      }
+
       ctx.beginPath();
-      this.drawingState.existingStrokes.forEach((stroke) => {
-        let firstCanvasPosition = this.convertPositionFromRelativeToCanvas(stroke.positions[0]);
+      strokes.forEach((stroke) => {
+        let [firstRelativePosition, ...restRelativePositions] = stroke.positions;
+        let firstCanvasPosition = this.convertPositionFromRelativeToCanvas(firstRelativePosition);
         let lastCanvasPosition = this.convertPositionFromRelativeToCanvas(stroke.positions.lastItem);
         if (stroke.drawingState == DRAWING_STATES.Freehand) {
           ctx.moveTo(firstCanvasPosition.x, firstCanvasPosition.y);
-          stroke.positions.slice(1).forEach((currentRelativePosition) => {
+          restRelativePositions.forEach((currentRelativePosition) => {
             let currentCanvasPosition = this.convertPositionFromRelativeToCanvas(currentRelativePosition);
             ctx.lineTo(currentCanvasPosition.x, currentCanvasPosition.y);
           });
           ctx.stroke();
         }
         else if (stroke.drawingState == DRAWING_STATES.Line) {
-          if (this.drawingState.activeStroke == stroke) {
-            // Temp only
-          }
-          else {
-            ctx.moveTo(firstCanvasPosition.x, firstCanvasPosition.y);
-            ctx.lineTo(lastCanvasPosition.x, lastCanvasPosition.y);
-            ctx.moveTo(firstCanvasPosition.x, firstCanvasPosition.y);
-            ctx.lineTo(lastCanvasPosition.x, lastCanvasPosition.y);
-            ctx.stroke();
-          }
+          ctx.moveTo(firstCanvasPosition.x, firstCanvasPosition.y);
+          ctx.lineTo(lastCanvasPosition.x, lastCanvasPosition.y);
+          ctx.stroke();
         }
-      })
+      });
+    },
+    redrawMain: function() {
+      this.redrawCanvas(this.canvas, this.drawingState.existingStrokes);
       console.log("RedrawMain finished");
     },
     redrawTemp: function() {
-      // console.log("RedrawTemp");
-      let tempCtx = this.tempCanvas.getContext("2d");
-      tempCtx.clearRect(0, 0, this.canvasWidth, this.canvasHeight);
-      tempCtx.beginPath();
-      this.drawingState.existingStrokes.forEach((stroke) => {
-        let firstCanvasPosition = this.convertPositionFromRelativeToCanvas(stroke.positions[0]);
-        let lastCanvasPosition = this.convertPositionFromRelativeToCanvas(stroke.positions.lastItem);
-        if (stroke.drawingState == DRAWING_STATES.Freehand) {
-          // Main only
-        }
-        else if (stroke.drawingState == DRAWING_STATES.Line) {
-          if (this.drawingState.activeStroke == stroke) {
-            tempCtx.moveTo(firstCanvasPosition.x, firstCanvasPosition.y);
-            tempCtx.lineTo(lastCanvasPosition.x, lastCanvasPosition.y);
-            tempCtx.moveTo(firstCanvasPosition.x, firstCanvasPosition.y);
-            tempCtx.lineTo(lastCanvasPosition.x, lastCanvasPosition.y);
-            tempCtx.stroke();
-          }
-        }
-      })
+      this.redrawCanvas(this.tempCanvas, this.drawingState.activeStroke);
       console.log("RedrawTemp finished");
     },
     convertPositionFromCanvasToRelative(canvasPosition) {
