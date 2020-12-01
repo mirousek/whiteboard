@@ -27,9 +27,9 @@
           :style="{ width: canvasWidth + 'px', height: canvasHeight + 'px'}"
           :width="canvasWidth"
           :height="canvasHeight"
-          v-on:mousedown="canvasMouseDown"
-          v-on:mousemove="canvasMouseMove"
-          v-on:mouseup="canvasMouseUp"
+          v-on:mousedown.stop.prevent="canvasMouseDown"
+          v-on:mousemove.stop.prevent="canvasMouseMove"
+          v-on:mouseup.stop.prevent="canvasMouseUp"
       />
     </div>
   </div>
